@@ -36,22 +36,36 @@ public class WinformsFuzzer
             {
                 try
                 {
-                    // Take screenshot periodically
-                    if (screenshotCounter % 10 == 0)
+                    // Get all top-level windows (main + child)
+                    var windows = app.GetAllTopLevelWindows(automation);
+
+                    foreach (var window in windows)
                     {
-                        var screenshotPath = Path.Combine(screenshotFolder, $"screenshot_{screenshotCounter:D4}.png");
-                        mainWindow.Capture().Save(screenshotPath);
-                    }
+                        // Take screenshot periodically
+                        if (screenshotCounter % 10 == 0)
+                        {
+                            var screenshotPath =
+                                Path.Combine(screenshotFolder, $"screenshot_{screenshotCounter:D4}.png");
+                            window.Capture().Save(screenshotPath);
+                        }
 
-                    screenshotCounter++;
+                        screenshotCounter++;
 
-                    // Get all interactive elements
-                    var interactableElements = GetInteractableElements(mainWindow);
+                        // Get all interactive elements
+                        var interactableElements = GetInteractableElements(window);
 
-                    if (interactableElements.Any())
-                    {
-                        var element = interactableElements[random.Next(interactableElements.Count)];
-                        await FuzzElement(element, random);
+                        if (interactableElements.Any())
+                        {
+                            var element = interactableElements[random.Next(interactableElements.Count)];
+                            await FuzzElement(element, random);
+                        }
+
+                        // If not the main window, close after fuzzing
+                        if (window.Properties.AutomationId.ValueOrDefault !=
+                            mainWindow.Properties.AutomationId.ValueOrDefault)
+                        {
+                            window.Close();
+                        }
                     }
 
                     // Random delay between actions
@@ -73,7 +87,7 @@ public class WinformsFuzzer
     }
 
     private static Dictionary<string, List<AutomationElement>> windowElementCache = new();
-    
+
     private List<AutomationElement> GetInteractableElements(Window window)
     {
         string id = window.Properties.AutomationId.ValueOrDefault ?? window.Properties.Name.ValueOrDefault ?? "main";
@@ -81,7 +95,7 @@ public class WinformsFuzzer
         {
             return windowElementCache[id];
         }
-        
+
         var elements = new List<AutomationElement>();
 
         // Find buttons
@@ -103,13 +117,13 @@ public class WinformsFuzzer
         // Find list items
         elements.AddRange(window.FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem))
             .Where(e => e.IsEnabled && e.IsOffscreen == false));
-        
+
         // Find DataGridView items
         elements.AddRange(window.FindAllDescendants(cf => cf.ByControlType(ControlType.DataGrid))
             .Where(e => e.IsEnabled && e.IsOffscreen == false));
 
         windowElementCache[id] = elements;
-        
+
         return elements;
     }
 
