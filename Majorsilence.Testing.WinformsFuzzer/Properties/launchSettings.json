@@ -1,0 +1,12 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Majorsilence.Testing.WinformsFuzzer": {
+      "commandName": "Project",
+      "commandLineArgs": "--app \"C:\\Users\\peter\\Downloads\\majorsilence-reporting-designer-net8.0-windows-anycpu\\net8.0-windows\\ReportDesigner.exe\" --duration 00:02:00 --screenshot \"C:\\temp\\fuzzing_screenshots\"",
+      "environmentVariables": {
+        
+      }
+    }
+  }
+}
